@@ -57,6 +57,7 @@ void setup() {
 
   MyMenu.addMenuItem(2,"SYSTEM INFORMATION","<","OK",">",-1,appSysInfo);
   MyMenu.addMenuItem(2,"SLEEP/CHARGING","<","OK",">",-1,appSleep);
+  MyMenu.addMenuItem(2, "Save Acc by Timer", "<", "OK", ">", -1, appAccTimer);
   MyMenu.addMenuItem(2,"RETURN","<","OK",">",0,dummy);
 
   MyMenu.addMenuItem(3,"DISPLAY BACKLIGHT","<","OK",">",-1,appCfgBrigthness);
