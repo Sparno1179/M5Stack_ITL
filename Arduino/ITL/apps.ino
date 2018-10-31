@@ -1,6 +1,11 @@
+#include <Ticker.h>
 #include <time.h>
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
+
+// VScodeでエラーを出さないための記述。Arduinoでコンパイル時はコメントアウトすること。
+// #include <M5StackSAM.h>
+// M5SAM MyMenu;
 
 // LCDの中央座標を示す。何かと使うので定義。
 #define LCDcenterX 160
@@ -20,11 +25,7 @@ struct sensorData {
 int fileCount(fs::FS &fs, const char * dirname, uint8_t levels);
 void getAcc(MPU9250 IMU, sensorData *pSensorData);
 int writeFile(fs::FS &fs, const char * path, const char * message);
-
-// VScodeでエラーを出さないための記述。Arduinoでコンパイル時はコメントアウトすること。
-// #include <M5StackSAM.h>
-// M5SAM MyMenu;
-
+void _readSensor(MPU9250* IMU);
 
 /**
  * @brief SD/accフォルダ内のファイルの数を数えて表示
@@ -166,56 +167,111 @@ void appShowNowTime() {
 }
 
 
-// TODO
+//タイマー
+Ticker tickerSensor;
+Ticker tickerWriteData;
+
+//バッファ
+sensorData *sdBuff = NULL;
+int saveIndex = 0;
+//バッファのインデックス
+volatile int buffPointer = 0;
+volatile bool buffSaveFlg = false;
+
 /**
- * @brief SDカードへファイルを保存するテスト
+ * @brief 加速度をタイマー割り込みでとるパターン
  * 
- * @note テストなので実際に使うことはない。そのうち削除。
+ * タイマーがミリ秒単位しかないため64Hzに最も近い16ミリ秒間隔（62.5Hz）を指定
+ * 60秒計測ー＞新しいファイルで保存ー＞60秒計測.......
  */
-void appSaveToSD() {
-  MyMenu.drawAppMenu(F("Write Data To SD"),F(""),F("EXIT"),F("WRITE"));
-
-  while(M5.BtnB.wasPressed()){
-    M5.update();
-  }
-
-  M5.Lcd.drawCentreString("Write test CSV file to SD/acc", LCDcenterX, LCDcenterY-30, 2);
-  writeFile(SD, "/acc/test.csv", "1,5,6");
+void appAccTimer() {
+    MyMenu.drawAppMenu(F("Save Acc by Timer"),F(""),F("EXIT"),F(""));
   
-  while(!M5.BtnB.wasPressed()){
-    if(M5.BtnC.wasPressed()) {  
-      switch(writeFile(SD, "/acc/test.csv", "1,5,6")) {
-        case 0: M5.Lcd.drawCentreString("Write data successfully", LCDcenterX, LCDcenterY, 2); break;
-        case 1: M5.Lcd.drawCentreString("Failed to open file", LCDcenterX, LCDcenterY, 2); break;
-        case 2: M5.Lcd.drawCentreString("Failed to write data", LCDcenterX, LCDcenterY, 2); break;
-      }
-
+    while(M5.BtnB.wasPressed()){
+      M5.update();
     }
-    M5.update();
-  }
+  
+    // 加速度・ジャイロセンサの宣言・初期化
+    M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY, 2);
+    static MPU9250 IMU;
+    IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
+    IMU.initMPU9250();
+  
+    MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
+    MyMenu.windowClr();
+    M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+    sdBuff = (struct sensorData*)malloc( sizeof(struct sensorData)*4096); //長さ4096を確保 ＊最後にfree(sdBuff)
+    while(!M5.BtnB.wasPressed()){
+      if(M5.BtnA.wasPressed()) {
+        MyMenu.drawAppMenu(F("keisoku chu desu"),F(""),F("EXIT"),F("STOP"));
 
-  MyMenu.show();
+        // 16ミリ秒ごと(62.5Hz)にセンサーリード
+        tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
+        // 60秒ごとにフラグ（buffSaveFlg）を立てる
+        tickerWriteData.attach_ms(60000, _buffSave); 
+
+        while(!M5.BtnC.wasPressed()) {
+          M5.update();
+          if(buffSaveFlg) {
+            //タイマーを止める
+            tickerSensor.detach();
+            tickerWriteData.detach();
+            
+            //ファイル作成
+            char fileName[16];
+            sprintf(fileName, "/walk/%d.csv", saveIndex++);
+            File file = SD.open(fileName, FILE_WRITE);
+            
+            //Serial.println(fileName);
+            //ファイルが開けないとき
+            if(!file) {
+                //M5.Lcd.drawCentreString("SD not found?Plz Insert SD and reboot", LCDcenterX, LCDcenterY, 2);
+                Serial.println("SD not found?Plz Insert SD and reboot");
+                tickerSensor.detach();
+                tickerWriteData.detach();
+                break;
+            }
+
+            //バッファを全て書き込み
+            for(int i = 0; i < buffPointer; i++) {
+              char buf[64];
+              sprintf(buf, "%d, %d, %d, %d, %d, %d", sdBuff[i].accX, sdBuff[i].accY,sdBuff[i].accZ, sdBuff[i].gyroX, sdBuff[i].gyroY, sdBuff[i].gyroZ);
+              file.println(buf);
+            }
+            
+            file.close();
+
+            MyMenu.windowClr();
+            M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY, 2);
+            
+            //バッファ初期化
+            buffPointer = 0;
+            buffSaveFlg = false;
+            
+            // 計測開始
+            tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
+            tickerWriteData.attach_ms(60000, _buffSave); 
+          }
+          delay(100);
+        }
+        
+        //タイマーを止める
+        tickerSensor.detach();
+        tickerWriteData.detach();
+        //バッファ初期化
+        buffPointer = 0;
+        buffSaveFlg = false;
+
+        // 加速度・ジャイロ表示ループ終了
+        MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
+        MyMenu.windowClr();
+        M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+      }
+      M5.update();
+    }
+    free(sdBuff);
+    MyMenu.show();
 }
-
-/**
- * @brief SD/jpg/Tetris.jpgを表示する
- * 
- * 上記の写真を表示するだけです。
- * 画像表示テストに使っただけなのでそのうち消します。
- */
-void appDrawJpeg(){
-  MyMenu.drawAppMenu(F("BEST"),F(""),F("EXIT"),F(""));
-
-  while(M5.BtnB.wasPressed()){
-    M5.update();
-  }
-  M5.Lcd.drawJpgFile(SD, "/jpg/Tetris.jpg", 3, 34, 150, 150);
-  while(!M5.BtnB.wasPressed()){
-    M5.update();
-  }
-  MyMenu.show();
-}
-
 
 // TODO
 // SD/accフォルダ内のCSVファイルの名前をリスト形式で羅列する。
@@ -267,47 +323,32 @@ int fileCount(fs::FS &fs, const char * dirname, uint8_t levels) {
  * @brief 指定されたファイルに文字を出力
  *
  * 引数に書き込み先と内容を与え、それをファイルに出力。
- *
+ * 呼び出すごとに「オープン→書き込み→クローズ」をするので
+ * 速度的に難あり。
+ * 
  * @param[in] fs 書き出し先ファイルシステム。たいていはSD
  * @param[in] path 出力先ファイルパス。なければ自動で作成される。
- * @retval 0 ファイル読み込みエラー。同名ファイルが書き込み禁止になっているなど
- * @retval 1 書き出し正常終了
+ * @retval 0 書き出し正常終了
+ * @retval 1 ファイル読み込みエラー。同名ファイルが書き込み禁止になっているなど
  * @retval 2 ファイル書き込みエラー
  */
 int writeFile(fs::FS &fs, const char * path, const char * message){
   
     File file = fs.open(path, FILE_APPEND);
     if(!file){
-        return 1;
+      file.close();
+      return 1;
     }
     if(file.println(message)){
-        return 0;
+      file.close();
+      return 0;
     } else {
-        return 2;
-    }
+      file.close();
+      return 2;
+    }    
 }
 
-/**
- * @fn nowTime
- * @brief 現在時刻を取得し、返す
- * 
- * @return    "YYYY-MM-DD_HH-MM-SS"の形の時刻情報
- * @attention 時刻情報を返すのはいいが、M5Stackは起動時に時刻が1970/1/1でスタートするので
- *            ほとんどこのメソッドの意味はないかもしれない。
- * @note      return文はもっときれいな書き方があるはず。
- */
-String nowTime() {
-  struct tm tm;
-  time_t t = time(NULL);
-  localtime_r(&t, &tm);
-  
-  return String(tm.tm_year + 1900)+"-"+
-         String(tm.tm_mon + 1)+"-"+
-         String(tm.tm_mday)+"_"+
-         String(tm.tm_hour)+"-"+
-         String(tm.tm_min)+"-"+
-         String(tm.tm_sec);
-}
+
 
 
 /**
@@ -347,9 +388,45 @@ void getAcc(MPU9250 IMU, sensorData *pSensorData) {
   pSensorData -> gyroZ = (int)(IMU.gz);
 }
 
+//ハンドラ－１（センサーを読んでバッファリング）
+void _readSensor(MPU9250* IMU) {
+  sensorData s;
+  getAcc(*IMU, &s);
+  sdBuff[buffPointer++] = s;
+}
+
+//ハンドラ－２（SD保存のフラグを管理）
+void _buffSave() {
+  buffSaveFlg = true;
+}
 
 
 
+
+// --------------------- ここより下は一応残してある未使用メソッドたち ---------------------
+
+
+/**
+ * @fn nowTime
+ * @brief 現在時刻を取得し、返す
+ * 
+ * @return    "YYYY-MM-DD_HH-MM-SS"の形の時刻情報
+ * @attention 時刻情報を返すのはいいが、M5Stackは起動時に時刻が1970/1/1でスタートするので
+ *            ほとんどこのメソッドの意味はないかもしれない。
+ * @note      return文はもっときれいな書き方があるはず。
+ */
+String nowTime() {
+  struct tm tm;
+  time_t t = time(NULL);
+  localtime_r(&t, &tm);
+  
+  return String(tm.tm_year + 1900)+"-"+
+         String(tm.tm_mon + 1)+"-"+
+         String(tm.tm_mday)+"_"+
+         String(tm.tm_hour)+"-"+
+         String(tm.tm_min)+"-"+
+         String(tm.tm_sec);
+}
 
 
 

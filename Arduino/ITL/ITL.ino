@@ -7,7 +7,6 @@
 M5SAM MyMenu;
 
 #define EEPROM_SIZE 64
-
 void dummy(){
 }
 
@@ -45,10 +44,8 @@ void setup() {
   
   MyMenu.addMenuItem(1, "CSV file count","<","OK",">", -1, appCsvFileCount);
   MyMenu.addMenuItem(1, "Show Current AccGyro","<","OK",">", -1, appDrawAccGyro);
-  MyMenu.addMenuItem(1, "write Data to SD", "<", "OK", ">", -1, appSaveToSD);
   MyMenu.addMenuItem(1, "Save Acceleration", "<", "OK", ">", -1, appSaveAcc);
-  MyMenu.addMenuItem(1, "TetrisPICTURE","<","OK",">", -1, appDrawJpeg);
-  MyMenu.addMenuItem(1, "Show Now Time", "<", "OK", ">", -1, appShowNowTime);
+  MyMenu.addMenuItem(1, "Acc Timer","<","OK",">", -1, appAccTimer);
   MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.show();
