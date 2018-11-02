@@ -392,6 +392,7 @@ void getAcc(MPU9250 IMU, sensorData *pSensorData) {
 void _readSensor(MPU9250* IMU) {
   sensorData s;
   getAcc(*IMU, &s);
+  Serial.println(s.gyroX);
   sdBuff[buffPointer++] = s;
 }
 
