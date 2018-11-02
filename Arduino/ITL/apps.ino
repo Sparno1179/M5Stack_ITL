@@ -1,5 +1,6 @@
 #include <Ticker.h>
 #include <time.h>
+#include <string.h>
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
 
@@ -7,9 +8,11 @@
 // #include <M5StackSAM.h>
 // M5SAM MyMenu;
 
-// LCDの中央座標を示す。何かと使うので定義。
+// LCDの中央座標を示す。Y座標は3列分用意。
 #define LCDcenterX 160
-#define LCDcenterY 120
+#define LCDcenterY1 100
+#define LCDcenterY2 120
+#define LCDcenterY3 140
 
 // 加速度・ジャイロを格納する構造体
 struct sensorData {
@@ -38,8 +41,8 @@ void appCsvFileCount(){
     M5.update();
   }
   MyMenu.windowClr();
-  M5.Lcd.drawCentreString(F("File count"),LCDcenterX,(LCDcenterY)-30,2);
-  M5.Lcd.drawCentreString(String(fileCount(SD, "/acc", 0))+"  CSVs in SD card",LCDcenterX,(LCDcenterY)-10,2);   
+  M5.Lcd.drawCentreString(F("File count"),LCDcenterX,LCDcenterY1,2);
+  M5.Lcd.drawCentreString(String(fileCount(SD, "/walk", 0))+"  CSVs in SD card",LCDcenterX,LCDcenterY2,2);   
   while(!M5.BtnB.wasPressed()){
     M5.update();
   }
@@ -52,8 +55,7 @@ void appCsvFileCount(){
  * スタート、ストップ機能付き。ループ間隔は15.625ms(64Hz)
  * 結果表示ごとに画面をクリアしているため、画面がちらつきます。
  * 
- * @attention どうやらセンサ初期化時の加速度・ジャイロが基準になるため
- *            動いてるときにセンサの初期化が始まるとでたらめな計測結果になります。
+ * @attention 加速度の初期値をそろえるため、既定の初期値になるまで初期化を続けます。
  */
 void appDrawAccGyro() {
   MyMenu.drawAppMenu(F("current Acc and Gyro"),F(""),F("EXIT"),F(""));
@@ -63,15 +65,24 @@ void appDrawAccGyro() {
   }
 
   // 加速度・ジャイロセンサの宣言・初期化
-  M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY, 2);
+  M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY2, 2);
+  delay(1000);
   MPU9250 IMU;
-  IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
-  IMU.initMPU9250();
   struct sensorData sensorData = {0, 0, 0, 0, 0, 0};
 
+  while(true) {
+    IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
+    IMU.initMPU9250();
+    getAcc(IMU, &sensorData);
+
+    if(abs(abs(sensorData.accX) - abs(sensorData.accY)) < 30) {
+      break;
+    }
+  }
+  
   MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
   MyMenu.windowClr();
-  M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+  M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
     
     while(!M5.BtnB.wasPressed()){
     
@@ -83,17 +94,17 @@ void appDrawAccGyro() {
           getAcc(IMU, &sensorData);
           MyMenu.windowClr();
           // 加速度を表示
-          M5.Lcd.drawCentreString("Acceleration", LCDcenterX, LCDcenterY-35, 2);
+          M5.Lcd.drawCentreString("Acceleration", LCDcenterX, LCDcenterY1, 2);
           M5.Lcd.drawCentreString(String(sensorData.accX)+"  "+
                                   String(sensorData.accY)+"  "+
                                   String(sensorData.accZ),
-                                  LCDcenterX, LCDcenterY-20, 2);
+                                  LCDcenterX, LCDcenterY2, 2);
           // ジャイロを表示
-          M5.Lcd.drawCentreString("Gyro", LCDcenterX, LCDcenterY, 2);
+          M5.Lcd.drawCentreString("Gyro", LCDcenterX, LCDcenterY3, 2);
           M5.Lcd.drawCentreString(String(sensorData.gyroX)+"  "+
                                   String(sensorData.gyroY)+"  "+
                                   String(sensorData.gyroZ),
-                                  LCDcenterX, LCDcenterY+15, 2);
+                                  LCDcenterX, LCDcenterY3+15, 2);
           delay(15.625);
           M5.update();
         }
@@ -101,7 +112,7 @@ void appDrawAccGyro() {
         // 加速度・ジャイロ表示ループ終了
         MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
         MyMenu.windowClr();
-        M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+        M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
       }
     M5.update();
     }
@@ -154,11 +165,11 @@ void appShowNowTime() {
     M5.update();
   }
 
-  M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY-30, 2);
+  M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY2, 2);
   
   while(!M5.BtnB.wasPressed()){
     if(M5.BtnA.wasPressed()) {
-      M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY-30, 2);
+      M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY2, 2);
     }
     M5.update();
   }
@@ -168,12 +179,14 @@ void appShowNowTime() {
 
 
 //タイマー
-Ticker tickerSensor;
-Ticker tickerWriteData;
+Ticker tickerSensor; // センサの値を読む
+Ticker tickerShowTime; // 計測経過時間表示
+Ticker tickerWriteData; // バッファにためた加速度データをCSVに書き込み
 
 //バッファ
 sensorData *sdBuff = NULL;
 int saveIndex = 0;
+int elapsedTime = 0;
 //バッファのインデックス
 volatile int buffPointer = 0;
 volatile bool buffSaveFlg = false;
@@ -192,47 +205,65 @@ void appAccTimer() {
     }
   
     // 加速度・ジャイロセンサの宣言・初期化
-    M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY, 2);
+    M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY2, 2);
+    delay(1000);
     static MPU9250 IMU;
     IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
     IMU.initMPU9250();
   
     MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
     MyMenu.windowClr();
-    M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+    M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
+
     sdBuff = (struct sensorData*)malloc( sizeof(struct sensorData)*4096); //長さ4096を確保 ＊最後にfree(sdBuff)
     while(!M5.BtnB.wasPressed()){
       if(M5.BtnA.wasPressed()) {
         MyMenu.drawAppMenu(F("keisoku chu desu"),F(""),F("EXIT"),F("STOP"));
 
         // 16ミリ秒ごと(62.5Hz)にセンサーリード
-        tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
+        tickerSensor.attach_ms<MPU9250*>(16, _readSensor, &IMU);
+        // 1秒ごとに経過時間を表示
+        tickerShowTime.attach_ms(1000, _showElapsedTime);
         // 60秒ごとにフラグ（buffSaveFlg）を立てる
-        tickerWriteData.attach_ms(60000, _buffSave); 
+        tickerWriteData.attach_ms(10000, _buffSave); 
 
         while(!M5.BtnC.wasPressed()) {
           M5.update();
           if(buffSaveFlg) {
+            Serial.println("buffSaveFlg setted!");
             //タイマーを止める
             tickerSensor.detach();
+            tickerShowTime.detach();
             tickerWriteData.detach();
-            
+            Serial.println("All ticker detached!");
+
             //ファイル作成
-            char fileName[16];
-            sprintf(fileName, "/walk/%d.csv", saveIndex++);
+            Serial.println("making csv file...");
+            saveIndex = fileCount(SD, "/walk", 0);
+            Serial.print("saveIndex = "); Serial.println(saveIndex);
+            char fileName[16] = {};
+            sprintf(fileName, "/walk/%d.csv", saveIndex);
+            Serial.print("fileName = "); Serial.println(fileName);
             File file = SD.open(fileName, FILE_WRITE);
+            Serial.print("Opened file = "); Serial.println(file);
+            
             
             //Serial.println(fileName);
             //ファイルが開けないとき
             if(!file) {
-                //M5.Lcd.drawCentreString("SD not found?Plz Insert SD and reboot", LCDcenterX, LCDcenterY, 2);
+                MyMenu.windowClr();
+                M5.Lcd.drawCentreString("SD not found?Plz Insert SD and reboot", LCDcenterX, LCDcenterY2, 2);
                 Serial.println("SD not found?Plz Insert SD and reboot");
                 tickerSensor.detach();
+                tickerShowTime.detach();
                 tickerWriteData.detach();
                 break;
             }
-
+            Serial.println("opened csv file successfully!");
             //バッファを全て書き込み
+            MyMenu.windowClr();
+            Serial.println("CSV writing...");
+            M5.Lcd.drawCentreString("CSV Writing...", LCDcenterX, LCDcenterY1, 2);
             for(int i = 0; i < buffPointer; i++) {
               char buf[64];
               sprintf(buf, "%d, %d, %d, %d, %d, %d", sdBuff[i].accX, sdBuff[i].accY,sdBuff[i].accZ, sdBuff[i].gyroX, sdBuff[i].gyroY, sdBuff[i].gyroZ);
@@ -240,9 +271,10 @@ void appAccTimer() {
             }
             
             file.close();
+            Serial.println("File closed!");
 
             MyMenu.windowClr();
-            M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY, 2);
+            M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY3, 2);
             
             //バッファ初期化
             buffPointer = 0;
@@ -250,22 +282,29 @@ void appAccTimer() {
             
             // 計測開始
             tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
-            tickerWriteData.attach_ms(60000, _buffSave); 
+            tickerShowTime.attach_ms(1000, _showElapsedTime);
+            tickerWriteData.attach_ms(10000, _buffSave); 
+            M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY2, 2);
+            Serial.println("All ticker attached!");
           }
           delay(100);
         }
         
         //タイマーを止める
         tickerSensor.detach();
+        tickerShowTime.detach();
         tickerWriteData.detach();
         //バッファ初期化
         buffPointer = 0;
+        elapsedTime = 0;
         buffSaveFlg = false;
+
+        MyMenu.windowClr();
 
         // 加速度・ジャイロ表示ループ終了
         MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
         MyMenu.windowClr();
-        M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY, 2);
+        M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
       }
       M5.update();
     }
@@ -300,8 +339,14 @@ int fileCount(fs::FS &fs, const char * dirname, uint8_t levels) {
     int filecount = 0;
 
     File root = fs.open(dirname);
-    if(!root || !root.isDirectory()){
-        return -1; // フォルダを開けなかった
+
+    if(!root) {
+      Serial.println("no such directory");
+      return -1; // フォルダを開けなかった
+    }
+    if(!root.isDirectory()) {
+      Serial.println("not directory");
+      return -1;
     }
 
     File file = root.openNextFile();
@@ -366,12 +411,12 @@ void getAcc(MPU9250 IMU, sensorData *pSensorData) {
   IMU.readGyroData(IMU.gyroCount);
   IMU.getGres();
 
-  // 取得した加速度を何かしらの計算にかける。
-  IMU.ax = (float)IMU.accelCount[0]*IMU.aRes;
-  IMU.ay = (float)IMU.accelCount[1]*IMU.aRes;
-  IMU.az = (float)IMU.accelCount[2]*IMU.aRes;
+  // 取得した加速度に解像度をかけて、バイアス値を引く
+  IMU.ax = (float)IMU.accelCount[0]*IMU.aRes - IMU.accelBias[0];
+  IMU.ay = (float)IMU.accelCount[1]*IMU.aRes - IMU.accelBias[1];
+  IMU.az = (float)IMU.accelCount[2]*IMU.aRes - IMU.accelBias[2];
 
-  // 取得したジャイロを何かしらの計算にかける
+  // 取得したジャイロに解像度をかける
   IMU.gx = (float)IMU.gyroCount[0]*IMU.gRes;
   IMU.gy = (float)IMU.gyroCount[1]*IMU.gRes;
   IMU.gz = (float)IMU.gyroCount[2]*IMU.gRes;
@@ -382,7 +427,7 @@ void getAcc(MPU9250 IMU, sensorData *pSensorData) {
   // 加速度・ジャイロを与えられた構造体に代入
   pSensorData -> accX = (int)(1000*IMU.ax);
   pSensorData -> accY = (int)(1000*IMU.ay);
-  pSensorData -> accZ = (int)(1000*IMU.ax);
+  pSensorData -> accZ = (int)(1000*IMU.az);
   pSensorData -> gyroX = (int)(IMU.gx);
   pSensorData -> gyroY = (int)(IMU.gy);
   pSensorData -> gyroZ = (int)(IMU.gz);
@@ -398,6 +443,13 @@ void _readSensor(MPU9250* IMU) {
 //ハンドラ－２（SD保存のフラグを管理）
 void _buffSave() {
   buffSaveFlg = true;
+}
+
+// ハンドラ3 (経過秒数の表示)
+void _showElapsedTime() {
+  elapsedTime++;
+  MyMenu.windowClr();
+  M5.Lcd.drawCentreString((String(elapsedTime)+"seconds"), LCDcenterX, LCDcenterY2, 2);
 }
 
 

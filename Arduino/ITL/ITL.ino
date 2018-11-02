@@ -15,6 +15,9 @@ void setup() {
   M5.lcd.setBrightness(195);  
   Serial.begin(115200);
   Wire.begin();
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  Serial.println("WiFi disabled!");
 
   if (!EEPROM.begin(EEPROM_SIZE))
   {
