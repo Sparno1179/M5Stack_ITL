@@ -4,6 +4,8 @@
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
 
+// ↓いつの間にこれなしでもVScodeがエラー出さなくなりました
+//
 // VScodeでエラーを出さないための記述。Arduinoでコンパイル時はコメントアウトすること。
 // #include <M5StackSAM.h>
 // M5SAM MyMenu;
@@ -26,7 +28,7 @@ struct sensorData {
 
 // プロトタイプ宣言
 int fileCount(fs::FS &fs, const char * dirname, uint8_t levels);
-void getAcc(MPU9250 IMU, sensorData *pSensorData);
+void getAcc(MPU9250* IMU, sensorData* pSensorData);
 int writeFile(fs::FS &fs, const char * path, const char * message);
 void _readSensor(MPU9250* IMU);
 
@@ -73,7 +75,7 @@ void appDrawAccGyro() {
   while(true) {
     IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
     IMU.initMPU9250();
-    getAcc(IMU, &sensorData);
+    getAcc(&IMU, &sensorData);
 
     if(abs(abs(sensorData.accX) - abs(sensorData.accY)) < 30) {
       break;
@@ -91,7 +93,7 @@ void appDrawAccGyro() {
 
         // 加速度・ジャイロ表示ループ
         while(!M5.BtnC.wasPressed()) {
-          getAcc(IMU, &sensorData);
+          getAcc(&IMU, &sensorData);
           MyMenu.windowClr();
           // 加速度を表示
           M5.Lcd.drawCentreString("Acceleration", LCDcenterX, LCDcenterY1, 2);
@@ -404,39 +406,40 @@ int writeFile(fs::FS &fs, const char * path, const char * message){
  * @param[in,out] *pSensorData センサデータ構造体のポインタ
  * @return なし。与えられたポインタ先のメンバに直接書き込む
  */
-void getAcc(MPU9250 IMU, sensorData *pSensorData) {
+void getAcc(MPU9250* IMU, sensorData* pSensorData) {
   // センサから各種情報を読み取り
-  IMU.readAccelData(IMU.accelCount);
-  IMU.getAres();
-  IMU.readGyroData(IMU.gyroCount);
-  IMU.getGres();
+  IMU->readAccelData(IMU->accelCount);
+  IMU->getAres();
+  IMU->readGyroData(IMU->gyroCount);
+  IMU->getGres();
 
   // 取得した加速度に解像度をかけて、バイアス値を引く
-  IMU.ax = (float)IMU.accelCount[0]*IMU.aRes - IMU.accelBias[0];
-  IMU.ay = (float)IMU.accelCount[1]*IMU.aRes - IMU.accelBias[1];
-  IMU.az = (float)IMU.accelCount[2]*IMU.aRes - IMU.accelBias[2];
+  IMU->ay = (float)IMU->accelCount[1]*IMU->aRes - IMU->accelBias[1];
+  IMU->az = (float)IMU->accelCount[2]*IMU->aRes - IMU->accelBias[2];
+  IMU->ax = (float)IMU->accelCount[0]*IMU->aRes - IMU->accelBias[0];
 
   // 取得したジャイロに解像度をかける
-  IMU.gx = (float)IMU.gyroCount[0]*IMU.gRes;
-  IMU.gy = (float)IMU.gyroCount[1]*IMU.gRes;
-  IMU.gz = (float)IMU.gyroCount[2]*IMU.gRes;
+  IMU->gx = (float)IMU->gyroCount[0]*IMU->gRes;
+  IMU->gy = (float)IMU->gyroCount[1]*IMU->gRes;
+  IMU->gz = (float)IMU->gyroCount[2]*IMU->gRes;
 
   // 四元数を更新する際に必ず呼び出し
-  IMU.updateTime();
+  IMU->updateTime();
 
   // 加速度・ジャイロを与えられた構造体に代入
-  pSensorData -> accX = (int)(1000*IMU.ax);
-  pSensorData -> accY = (int)(1000*IMU.ay);
-  pSensorData -> accZ = (int)(1000*IMU.az);
-  pSensorData -> gyroX = (int)(IMU.gx);
-  pSensorData -> gyroY = (int)(IMU.gy);
-  pSensorData -> gyroZ = (int)(IMU.gz);
+  pSensorData -> accX = (int)(1000*IMU->ax);
+  pSensorData -> accY = (int)(1000*IMU->ay);
+  pSensorData -> accZ = (int)(1000*IMU->az);
+  pSensorData -> gyroX = (int)(IMU->gx);
+  pSensorData -> gyroY = (int)(IMU->gy);
+  pSensorData -> gyroZ = (int)(IMU->gz);
+
 }
 
 //ハンドラ－１（センサーを読んでバッファリング）
 void _readSensor(MPU9250* IMU) {
   sensorData s;
-  getAcc(*IMU, &s);
+  getAcc(IMU, &s);
   sdBuff[buffPointer++] = s;
 }
 
