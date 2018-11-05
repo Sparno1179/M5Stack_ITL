@@ -47,8 +47,8 @@ void setup() {
   
   MyMenu.addMenuItem(1, "CSV file count","<","OK",">", -1, appCsvFileCount);
   MyMenu.addMenuItem(1, "Show Current AccGyro","<","OK",">", -1, appDrawAccGyro);
-  MyMenu.addMenuItem(1, "Save Acceleration", "<", "OK", ">", -1, appSaveAcc);
   MyMenu.addMenuItem(1, "Acc Timer","<","OK",">", -1, appAccTimer);
+  MyMenu.addMenuItem(1, "SANDBOX", "<", "OK", ">", -1, appSandBox);
   MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.show();

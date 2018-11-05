@@ -121,40 +121,6 @@ void appDrawAccGyro() {
     MyMenu.show();
 }
 
-// TODO
-// 加速度を計測し、SDカードに継続的に保存。
-/**
- * @brief 加速度・ジャイロを計測し、SDカードに保存
- * 
- * 主要機能。
- * ファイル名を時刻にしようかと思ったがきつそう(nowTimeメソッド参照)なので
- * どのようにファイル名を付けるか模索中。書き込みタイミングや形式などいろいろ決めなければいけない。
- * まだ未完成。
- * センサデータの取得についてはほぼ問題なし。SDカードへの書き込みもテスト済み。
- * 
- */
-void appSaveAcc() {
-  MyMenu.drawAppMenu(F("Save Acceleration"),F("OK"),F("EXIT"),F("NEXT"));
-
-  while(M5.BtnB.wasPressed()){
-    M5.update();
-  }
-
-  // 加速度センサを初期化
-  MPU9250 IMU;
-  IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
-  IMU.initMPU9250();  
-
-  // センサデータ構造体を初期化
-  struct sensorData sensorData = {0, 0, 0, 0, 0, 0};
-
-  // メインループ
-  while(!M5.BtnB.wasPressed()){
-    M5.update();
-  }
-
-  MyMenu.show();
-}
 
 /**
  * @brief 現在時刻を表示する。
@@ -213,7 +179,7 @@ void appAccTimer() {
     IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
     IMU.initMPU9250();
   
-    MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
+    MyMenu.drawAppMenu(F("Save acc and gyro"),F("START"),F("EXIT"),F(""));
     MyMenu.windowClr();
     M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
 
@@ -263,7 +229,7 @@ void appAccTimer() {
             }
             Serial.println("opened csv file successfully!");
             //バッファを全て書き込み
-            MyMenu.windowClr();
+            clearY1();
             Serial.println("CSV writing...");
             M5.Lcd.drawCentreString("CSV Writing...", LCDcenterX, LCDcenterY1, 2);
             for(int i = 0; i < buffPointer; i++) {
@@ -275,7 +241,7 @@ void appAccTimer() {
             file.close();
             Serial.println("File closed!");
 
-            MyMenu.windowClr();
+            clearY1();
             M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY3, 2);
             
             //バッファ初期化
@@ -286,7 +252,7 @@ void appAccTimer() {
             tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
             tickerShowTime.attach_ms(1000, _showElapsedTime);
             tickerWriteData.attach_ms(10000, _buffSave); 
-            M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY2, 2);
+            M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY1, 2);
             Serial.println("All ticker attached!");
           }
           delay(100);
@@ -304,7 +270,7 @@ void appAccTimer() {
         MyMenu.windowClr();
 
         // 加速度・ジャイロ表示ループ終了
-        MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
+        MyMenu.drawAppMenu(F("Save acc and gyro"),F("START"),F("EXIT"),F(""));
         MyMenu.windowClr();
         M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
       }
@@ -451,11 +417,59 @@ void _buffSave() {
 // ハンドラ3 (経過秒数の表示)
 void _showElapsedTime() {
   elapsedTime++;
-  MyMenu.windowClr();
+  clearY2;
   M5.Lcd.drawCentreString((String(elapsedTime)+"seconds"), LCDcenterX, LCDcenterY2, 2);
 }
 
+// Y1, Y2, Y3それぞれの行のみをクリアするメソッド
+void clearY1() { M5.Lcd.fillRect(0, LCDcenterY1, 320, 20, MyMenu.getrgb(128, 128, 128)); }
+void clearY2() { M5.Lcd.fillRect(0, LCDcenterY2, 320, 20, MyMenu.getrgb(128, 128, 128)); }
+void clearY3() { M5.Lcd.fillRect(0, LCDcenterY3, 320, 20, MyMenu.getrgb(128, 128, 128)); }
 
+// いろいろと試してみたいことをテストするメソッド。本機能には絡みません。
+void appSandBox(){
+  MyMenu.drawAppMenu(F("SANDBOX"),F("A"),F("B"),F("C"));
+  int a=0, b=0, c=0;
+  char stringA[10] = "";
+  char stringB[10] = "";
+  char stringC[10] = "";
+
+  M5.Lcd.drawCentreString("Press A to draw here", LCDcenterX, LCDcenterY1, 2);
+  M5.Lcd.drawCentreString("Press B to draw here", LCDcenterX, LCDcenterY2, 2);
+  M5.Lcd.drawCentreString("Press C to draw here", LCDcenterX, LCDcenterY3, 2);
+  
+  while(M5.BtnB.wasPressed()){
+    M5.update();
+  }
+
+  while(!M5.BtnB.wasPressed()){
+
+    if(M5.BtnA.wasPressed()) {
+      a++;
+      sprintf(stringA, "a = %d", a);
+      M5.Lcd.fillRect(0, LCDcenterY1, 320, 20, MyMenu.getrgb(128, 128, 128));
+      M5.Lcd.drawCentreString(stringA, LCDcenterX, LCDcenterY1, 2);
+    }
+
+    if(M5.BtnB.wasPressed()) {
+      b++;
+      sprintf(stringB, "b = %d", b);
+      M5.Lcd.fillRect(0, LCDcenterY2, 320, 20, MyMenu.getrgb(128,128,128));
+      M5.Lcd.drawCentreString(stringB, LCDcenterX, LCDcenterY2, 2);
+    }
+
+    if(M5.BtnC.wasPressed()) {
+      c++;
+      sprintf(stringC, "c = %d", c);
+      M5.Lcd.fillRect(0, LCDcenterY3, 320, 20, MyMenu.getrgb(128,128,128));
+      M5.Lcd.drawCentreString(stringC, LCDcenterX, LCDcenterY3, 2);
+    }
+
+    M5.update();
+  }
+
+  MyMenu.show();
+}
 
 
 // --------------------- ここより下は一応残してある未使用メソッドたち ---------------------
