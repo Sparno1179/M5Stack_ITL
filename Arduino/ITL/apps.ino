@@ -4,6 +4,7 @@
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
 #include <M5StackSAM.h>
+#include "Ambient.h"
 
 
 // LCDの中央座標を示す。Y座標は3列分用意。
@@ -21,6 +22,15 @@ struct sensorData {
   int gyroY;
   int gyroZ;
 };
+
+// WiFiのSSIDとキー
+const char* ssid = "";
+const char* password = "";
+
+// AmbientのIDとキー
+Ambient ambient;
+unsigned int channelId = 000;
+const char* writeKey = "keykeykey";
 
 // プロトタイプ宣言
 int fileCount(fs::FS &fs, const char * dirname, uint8_t levels);
@@ -82,6 +92,17 @@ void appDrawAccGyro() {
       break;
     }
   }
+
+  // WiFiに接続
+  WiFi.begin(ssid, password);
+  // WiFiの接続を待つ
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(100);
+  }
+
+  ambient.begin(channelId, writeKey, &client)
+
+
   
   MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
   MyMenu.windowClr();
@@ -110,6 +131,12 @@ void appDrawAccGyro() {
                                   LCDcenterX, LCDcenterY3+15, 2);
           delay(15.625);
           M5.update();
+
+          ambient.set(1, String(accX).c_str());
+          ambient.set(2, String(accY).c_str());
+          ambient.set(3, String(accZ).c_str());
+
+          ambient.send()
         }
 
         // 加速度・ジャイロ表示ループ終了
