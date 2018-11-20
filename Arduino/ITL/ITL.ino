@@ -12,9 +12,12 @@ void dummy(){
 
 void setup() {
   M5.begin();
-  M5.lcd.setBrightness(195);  
+  M5.lcd.setBrightness(90);  
   Serial.begin(115200);
   Wire.begin();
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  Serial.println("WiFi disabled!");
 
   if (!EEPROM.begin(EEPROM_SIZE))
   {
@@ -41,11 +44,16 @@ void setup() {
 
 
   MyMenu.addMenuItem(0, "Acc", "<", "OK", ">", 1, dummy);
+  MyMenu.addMenuItem(0, "SYSTEM", "<", "OK", ">", 2, dummy);
   
   MyMenu.addMenuItem(1, "CSV file count","<","OK",">", -1, appCsvFileCount);
   MyMenu.addMenuItem(1, "Show Current AccGyro","<","OK",">", -1, appDrawAccGyro);
-  MyMenu.addMenuItem(1, "Save Acceleration", "<", "OK", ">", -1, appSaveAcc);
   MyMenu.addMenuItem(1, "Acc Timer","<","OK",">", -1, appAccTimer);
+  MyMenu.addMenuItem(1, "SANDBOX", "<", "OK", ">", -1, appSandBox);
+  MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
+
+  MyMenu.addMenuItem(2, "BRIGHTNESS", "<", "OK", ">", -1, appSetBrightness);
+  MyMenu.addMenuItem(2, "SLEEP", "<", "OK", ">", -1, appSleep);
   MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.show();
