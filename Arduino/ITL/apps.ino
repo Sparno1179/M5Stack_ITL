@@ -4,6 +4,10 @@
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
 #include <M5StackSAM.h>
+<<<<<<< HEAD
+=======
+#include "Ambient.h"
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
 
 
 // LCDの中央座標を示す。Y座標は3列分用意。
@@ -21,6 +25,15 @@ struct sensorData {
   int gyroY;
   int gyroZ;
 };
+
+// WiFiのSSIDとキー
+const char* ssid = "";
+const char* password = "";
+
+// AmbientのIDとキー
+Ambient ambient;
+unsigned int channelId = 000;
+const char* writeKey = "keykeykey";
 
 // プロトタイプ宣言
 int fileCount(fs::FS &fs, const char * dirname, uint8_t levels);
@@ -83,6 +96,19 @@ void appDrawAccGyro() {
     }
   }
 
+<<<<<<< HEAD
+=======
+  // WiFiに接続
+  WiFi.begin(ssid, password);
+  // WiFiの接続を待つ
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(100);
+  }
+
+  ambient.begin(channelId, writeKey, &client)
+
+
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
   
   MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
   MyMenu.windowClr();
@@ -111,6 +137,12 @@ void appDrawAccGyro() {
                                   LCDcenterX, LCDcenterY3+15, 2);
           delay(15.625);
           M5.update();
+
+          ambient.set(1, String(accX).c_str());
+          ambient.set(2, String(accY).c_str());
+          ambient.set(3, String(accZ).c_str());
+
+          ambient.send()
         }
 
         // 加速度・ジャイロ表示ループ終了
@@ -188,7 +220,10 @@ void appAccTimer() {
     if(abs(sensorData.accX - sensorData.accY) < 70) {
       break;
     }
+<<<<<<< HEAD
     delay(50);
+=======
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
   }
   
   MyMenu.drawAppMenu(F("Save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
@@ -217,6 +252,7 @@ void appAccTimer() {
     if(M5.BtnC.wasPressed()) {
       MyMenu.drawAppMenu(F("save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
       MyMenu.nextList();
+<<<<<<< HEAD
     }
     
     // Aボタンを押すと計測スタート
@@ -226,6 +262,128 @@ void appAccTimer() {
       for(int i=-1; i < MyMenu.getListID(); i++) {
         movementID = i + 1;
       }
+=======
+    }
+    
+    // Aボタンを押すと計測スタート
+    if(M5.BtnA.wasPressed()) {
+
+      // 行動IDを取得
+      for(int i=-1; i < MyMenu.getListID(); i++) {
+        movementID = i + 1;
+      }
+
+      MyMenu.drawAppMenu(("SAVE "+String(movementList[movementID])),F(""),F("EXIT"),F("STOP"));
+
+      // 計測開始
+      M5.Lcd.drawCentreString("Waiting...", LCDcenterX, LCDcenterY2, 2);
+      delay(5000);
+      MyMenu.windowClr();
+      // 16ミリ秒ごと(62.5Hz)にセンサーリード
+      tickerSensor.attach_ms<MPU9250*>(16, _readSensor, &IMU);
+      // 1秒ごとに経過時間を表示
+      tickerShowTime.attach_ms(1000, _showElapsedTime);
+      // 60秒ごとにフラグ（buffSaveFlg）を立てる
+      tickerWriteData.attach_ms(30000, _buffSave); 
+
+      while(!M5.BtnC.wasPressed()) {
+        M5.update();
+        if(buffSaveFlg) {
+          Serial.println("buffSaveFlg setted!");
+          //タイマーを止める
+          tickerSensor.detach();
+          tickerShowTime.detach();
+          tickerWriteData.detach();
+          Serial.println("All ticker detached!");
+
+          // movementIDより、保存先パスの設定
+          char fileName[25] = {};
+          sprintf(fileName, "/acc/%s", movementList[movementID]);
+          //ファイル作成
+          Serial.println("making csv file...");
+          saveIndex = fileCount(SD, fileName, 0);
+          Serial.print("saveIndex = "); Serial.println(saveIndex);
+          sprintf(fileName, "/acc/%s/%d.csv", movementList[movementID], saveIndex);
+          Serial.print("fileName = "); Serial.println(fileName);
+          File file = SD.open(fileName, FILE_WRITE);
+          Serial.print("Opened file = "); Serial.println(file);
+          
+          
+          //Serial.println(fileName);
+          //ファイルが開けないとき
+          if(!file) {
+              MyMenu.windowClr();
+              M5.Lcd.drawCentreString("SD not found?Plz Insert SD and reboot", LCDcenterX, LCDcenterY2, 2);
+              Serial.println("SD not found?Plz Insert SD and reboot");
+              tickerSensor.detach();
+              tickerShowTime.detach();
+              tickerWriteData.detach();
+              break;
+          }
+          Serial.println("opened csv file successfully!");
+          //バッファを全て書き込み
+          clearLCDY1();
+          Serial.println("CSV writing...");
+          M5.Lcd.drawCentreString("CSV Writing...", LCDcenterX, LCDcenterY1, 2);
+          for(int i = 0; i < buffPointer; i++) {
+            char buf[64];
+            sprintf(buf, "%d, %d, %d, %d, %d, %d", sdBuff[i].accX, sdBuff[i].accY,sdBuff[i].accZ, sdBuff[i].gyroX, sdBuff[i].gyroY, sdBuff[i].gyroZ);
+            file.println(buf);
+          }
+          
+          file.close();
+          Serial.println("File closed!");
+
+          clearLCDY1();
+          M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY3, 2);
+          
+          //バッファ初期化
+          buffPointer = 0;
+          buffSaveFlg = false;
+          
+          // 計測開始
+          MyMenu.windowClr();
+          tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
+          tickerShowTime.attach_ms(1000, _showElapsedTime);
+          tickerWriteData.attach_ms(30000, _buffSave); 
+          M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY1, 2);
+          Serial.println("All ticker attached!");
+        }
+        delay(100);
+      }
+      
+      //タイマーを止める
+      tickerSensor.detach();
+      tickerShowTime.detach();
+      tickerWriteData.detach();
+      //バッファ初期化
+      buffPointer = 0;
+      elapsedTime = 0;
+      buffSaveFlg = false;
+
+      MyMenu.windowClr();
+
+      // 加速度・ジャイロ保存終了
+      MyMenu.drawAppMenu(F("Save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
+      MyMenu.showList();
+    }
+    M5.update();
+  }
+  free(sdBuff);
+  MyMenu.show();
+}
+
+
+
+// TODO
+// SD/accフォルダ内のCSVファイルの名前をリスト形式で羅列する。
+void csvList() {
+  int csv_count = fileCount(SD, "/acc", 0);
+  byte list_lines = 7;
+  uint16_t list_page = 0;
+  uint16_t list_pages = 0;
+  uint16_t list_lastpagelines = 0;
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
 
       MyMenu.drawAppMenu(("SAVE "+String(movementList[movementID])),F(""),F("EXIT"),F("STOP"));
 
@@ -469,12 +627,18 @@ void appSandBox(){
   char stringB[10] = "";
   char stringC[10] = "";
 
+<<<<<<< HEAD
   MPU9250 sensor;
   
 
   M5.Lcd.drawCentreString("Press A to draw here", LCDcenterX, LCDcenterY1, 2);
   M5.Lcd.drawCentreString("Press B to EXIT", LCDcenterX, LCDcenterY2, 2);
   M5.Lcd.drawCentreString("Press C to show MPU9250 temp", LCDcenterX, LCDcenterY3, 2);
+=======
+  M5.Lcd.drawCentreString("Press A to draw here", LCDcenterX, LCDcenterY1, 2);
+  M5.Lcd.drawCentreString("Press B to draw here", LCDcenterX, LCDcenterY2, 2);
+  M5.Lcd.drawCentreString("Press C to draw here", LCDcenterX, LCDcenterY3, 2);
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
   
   while(M5.BtnB.wasPressed()){
     M5.update();
@@ -500,11 +664,16 @@ void appSandBox(){
       c++;
       sprintf(stringC, "c = %d", c);
       M5.Lcd.fillRect(0, LCDcenterY3, 320, 20, MyMenu.getrgb(128,128,128));
+<<<<<<< HEAD
       M5.Lcd.drawCentreString(String(sensor.temperature), LCDcenterX, LCDcenterY3, 2);
+=======
+      M5.Lcd.drawCentreString(stringC, LCDcenterX, LCDcenterY3, 2);
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
     }
 
     M5.update();
   }
+<<<<<<< HEAD
 
   MyMenu.show();
 }
@@ -546,6 +715,10 @@ void appSetBrightness(){
 void appSleep(){
   M5.setWakeupButton(BUTTON_B_PIN);
   M5.powerOFF();
+=======
+
+  MyMenu.show();
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
 }
 
 

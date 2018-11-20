@@ -12,7 +12,11 @@ void dummy(){
 
 void setup() {
   M5.begin();
+<<<<<<< HEAD
   M5.lcd.setBrightness(90);  
+=======
+  M5.lcd.setBrightness(155);  
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
   Serial.begin(115200);
   Wire.begin();
   WiFi.mode(WIFI_STA);
@@ -50,10 +54,13 @@ void setup() {
   MyMenu.addMenuItem(1, "Show Current AccGyro","<","OK",">", -1, appDrawAccGyro);
   MyMenu.addMenuItem(1, "Acc Timer","<","OK",">", -1, appAccTimer);
   MyMenu.addMenuItem(1, "SANDBOX", "<", "OK", ">", -1, appSandBox);
+<<<<<<< HEAD
   MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.addMenuItem(2, "BRIGHTNESS", "<", "OK", ">", -1, appSetBrightness);
   MyMenu.addMenuItem(2, "SLEEP", "<", "OK", ">", -1, appSleep);
+=======
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
   MyMenu.addMenuItem(1, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.show();

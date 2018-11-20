@@ -4,17 +4,25 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+<<<<<<< HEAD
                 "C:/Users/Andrno9_CB/Documents/Arduino/libraries/M5Stack/src"
+=======
+                "C:/Users/Andrno9_Desktop/Documents/Arduino/**",
+                "C:/Users/Andrno9_Desktop/Documents/Arduino/*"
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
+<<<<<<< HEAD
             "windowsSdkVersion": "10.0.17134.0",
             "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/bin/Hostx64/x64/cl.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
+=======
+>>>>>>> 86124849ecb37e604ca13e43e53460d8c67dbd72
             "intelliSenseMode": "msvc-x64"
         }
     ],
