@@ -156,7 +156,8 @@ Ticker tickerWriteData; // バッファにためた加速度データをCSVに�
 
 //バッファ
 sensorData *sdBuff = NULL;
-int saveIndex = 0;
+int fileIndex = 0;
+char randStr[10];
 int elapsedTime = 0;
 //バッファのインデックス
 volatile int buffPointer = 0;
@@ -191,6 +192,9 @@ void appAccTimer() {
     }
     delay(50);
   }
+  
+  // ファイル名用ランダム文字列の生成
+  rand_text(randStr);
   
   MyMenu.drawAppMenu(F("Save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
   MyMenu.windowClr();
@@ -251,14 +255,15 @@ void appAccTimer() {
           tickerWriteData.detach();
           Serial.println("All ticker detached!");
 
+          // ファイル名のフォーマットは "MACアドレス_乱数_通し番号.csv"
+          char fileName[50] = {};
           // movementIDより、保存先パスの設定
-          char fileName[25] = {};
           sprintf(fileName, "/acc/%s", movementList[movementID]);
           //ファイル作成
           Serial.println("making csv file...");
-          saveIndex = fileCount(SD, fileName, 0);
-          Serial.print("saveIndex = "); Serial.println(saveIndex);
-          sprintf(fileName, "/acc/%s/%d.csv", movementList[movementID], saveIndex);
+          sprintf(fileName, "/acc/%s/%s_%s_%d.csv", movementList[movementID], getMacAddr().c_str(), randStr, fileIndex);
+          Serial.println("filename created completely.");
+          fileIndex++;
           Serial.print("fileName = "); Serial.println(fileName);
           File file = SD.open(fileName, FILE_WRITE);
           Serial.print("Opened file = "); Serial.println(file);
@@ -472,9 +477,9 @@ void appSandBox(){
   MPU9250 sensor;
   
 
-  M5.Lcd.drawCentreString("Press A to draw randAre", LCDcenterX, LCDcenterY1, 2);
+  M5.Lcd.drawCentreString("Press A to draw macAddr", LCDcenterX, LCDcenterY1, 2);
   M5.Lcd.drawCentreString("Press B to EXIT", LCDcenterX, LCDcenterY2, 2);
-  M5.Lcd.drawCentreString("Press C to show MPU9250 temp", LCDcenterX, LCDcenterY3, 2);
+  M5.Lcd.drawCentreString("Press C to show randStr", LCDcenterX, LCDcenterY3, 2);
   
   while(M5.BtnB.wasPressed()){
     M5.update();
@@ -484,9 +489,8 @@ void appSandBox(){
 
     if(M5.BtnA.wasPressed()) {
       a++;
-      rand_text(stringB);
       M5.Lcd.fillRect(0, LCDcenterY1, 320, 20, MyMenu.getrgb(128, 128, 128));
-      M5.Lcd.drawCentreString(stringB, LCDcenterX, LCDcenterY1, 2);
+      M5.Lcd.drawCentreString(getMacAddr(), LCDcenterX, LCDcenterY1, 2);
     }
 
     if(M5.BtnB.wasPressed()) {
@@ -500,7 +504,8 @@ void appSandBox(){
       c++;
       sprintf(stringC, "c = %d", c);
       M5.Lcd.fillRect(0, LCDcenterY3, 320, 20, MyMenu.getrgb(128,128,128));
-      M5.Lcd.drawCentreString(String(getMicroSec()), LCDcenterX, LCDcenterY3, 2);
+      rand_text(stringA);
+      M5.Lcd.drawCentreString(stringA, LCDcenterX, LCDcenterY3, 2);
     }
 
     M5.update();
@@ -568,6 +573,15 @@ unsigned long getMicroSec() {
   gettimeofday(&tv, NULL);
 
   return tv.tv_usec;
+}
+
+// MACアドレスを取得。間のダブルコロンは省きます
+String getMacAddr() {
+  uint8_t baseMac[6];
+  esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+  char baseMacChr[16] = {0};
+  sprintf(baseMacChr, "%02X%02X%02X%02X%02X%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
+  return String(baseMacChr);
 }
 
 
