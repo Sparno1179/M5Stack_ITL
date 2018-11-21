@@ -156,6 +156,7 @@ Ticker tickerWriteData; // バッファにためた加速度データをCSVに�
 
 //バッファ
 sensorData *sdBuff = NULL;
+int measure_time = 0;
 int fileIndex = 0;
 char randStr[10];
 int elapsedTime = 0;
@@ -231,8 +232,13 @@ void appAccTimer() {
       for(int i=-1; i < MyMenu.getListID(); i++) {
         movementID = i + 1;
       }
-
+      // 行動IDによってタイトルやTickerの時間を調整
       MyMenu.drawAppMenu(("SAVE "+String(movementList[movementID])),F(""),F("EXIT"),F("STOP"));
+      if(movementID == 3 || movementID == 4) {
+        measure_time = 5000; // 階段なら５秒計測
+      } else {
+        measure_time = 30000; // 階段以外なら30秒計測
+      }
 
       // 計測開始
       M5.Lcd.drawCentreString("Waiting...", LCDcenterX, LCDcenterY2, 2);
@@ -243,7 +249,7 @@ void appAccTimer() {
       // 1秒ごとに経過時間を表示
       tickerShowTime.attach_ms(1000, _showElapsedTime);
       // 30秒ごとにフラグ（buffSaveFlg）を立てる
-      tickerWriteData.attach_ms(30000, _buffSave); 
+      tickerWriteData.attach_ms(measure_time, _buffSave); 
 
       while(!M5.BtnC.wasPressed()) {
         M5.update();
@@ -305,7 +311,7 @@ void appAccTimer() {
           MyMenu.windowClr();
           tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
           tickerShowTime.attach_ms(1000, _showElapsedTime);
-          tickerWriteData.attach_ms(30000, _buffSave); 
+          tickerWriteData.attach_ms(measure_time, _buffSave); 
           M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY1, 2);
           Serial.println("All ticker attached!");
         }
