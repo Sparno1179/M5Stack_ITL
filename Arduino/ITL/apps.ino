@@ -1,5 +1,6 @@
 #include <Ticker.h>
 #include <time.h>
+#include <sys/time.h>
 #include <string.h>
 #include "utility/MPU9250.h"
 #include "utility/quaternionFilters.h"
@@ -466,7 +467,7 @@ void appSandBox(){
   int a=0, b=0, c=0;
   char stringA[10] = "";
   char stringB[11];
-  char stringC[10] = "";
+  char stringC[128] = "";
 
   MPU9250 sensor;
   
@@ -483,7 +484,7 @@ void appSandBox(){
 
     if(M5.BtnA.wasPressed()) {
       a++;
-      rand_text(10, stringB);
+      rand_text(stringB);
       M5.Lcd.fillRect(0, LCDcenterY1, 320, 20, MyMenu.getrgb(128, 128, 128));
       M5.Lcd.drawCentreString(stringB, LCDcenterX, LCDcenterY1, 2);
     }
@@ -499,7 +500,7 @@ void appSandBox(){
       c++;
       sprintf(stringC, "c = %d", c);
       M5.Lcd.fillRect(0, LCDcenterY3, 320, 20, MyMenu.getrgb(128,128,128));
-      M5.Lcd.drawCentreString(String(sensor.temperature), LCDcenterX, LCDcenterY3, 2);
+      M5.Lcd.drawCentreString(String(getMicroSec()), LCDcenterX, LCDcenterY3, 2);
     }
 
     M5.update();
@@ -547,15 +548,26 @@ void appSleep(){
   M5.powerOFF();
 }
 
-// 乱数ジェネレータ
-void rand_text(int length, char *randStr) {
-  int i, rand_int;
+// 乱数ジェネレータ(10文字)
+void rand_text(char *randStr) {
+  int i;
   char char_set[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
- 
-  for (i = 0; i < length; i++) {
-    randStr[i] = char_set[rand() % sizeof(char_set)];
+  // 起動からの経過時間（マイクロ秒）をシード値に。
+  srand(getMicroSec());
+
+  for (i = 0; i < 10; i++) {
+    randStr[i] = char_set[rand() % 61 + 1];
   }
-  randStr[length] = 0;
+  randStr[10] = 0;
+}
+
+
+// 現在時刻のマイクロ秒部分を取得し、返す。rand()のシード用
+unsigned long getMicroSec() {
+  struct timeval tv = {0};
+  gettimeofday(&tv, NULL);
+
+  return tv.tv_usec;
 }
 
 
