@@ -3,3 +3,9 @@
 /.vscode
 /Arduino/.vscode
 /Arduino/ITL/.vscode
+
+# PyCharmの設定ファイル
+/Python_ITL/.idea
+
+# 加速度データ
+/Python_ITL/acc

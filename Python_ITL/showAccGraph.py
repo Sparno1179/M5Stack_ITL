@@ -11,9 +11,33 @@ gyroX = []
 gyroY = []
 gyroZ = []
 
-movement = "stdown"
+movement_list = ("walk", "stand", "sit", "stdown", "stup", "lying", "vehicle")
 
-file_list = glob.glob("acc/{}/*_*_*.csv".format(movement))
+print("0: walk\n"
+      "1: stand\n"
+      "2: sit\n"
+      "3: stair_down\n"
+      "4: stair_up\n"
+      "5: lying\n"
+      "6: vehicle\n")
+
+movement_id = int(input("movementID -> "))
+
+print("file type?\n"
+      "0: num only (NUM.csv)\n"
+      "1: new format only (MAC_RAND_NUM.csv)\n"
+      "2: both")
+
+file_type_ID = int(input("file type -> "))
+
+if file_type_ID == 0:
+    file_type = "*_*_*"
+elif file_type_ID == 1:
+    file_type = "*[0-9]"
+else:
+    file_type = "*"
+
+file_list = glob.glob("acc/{}/{}.csv".format(movement_list[movement_id], file_type))
 
 for file in file_list:
     csvFile = pd.read_csv(file, names=('accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ'))
@@ -26,12 +50,8 @@ for file in file_list:
     gyroZ.extend(csvFile.gyroZ.values.tolist())
     print("extended {}.csv".format(file_list.index(file)))
 
-    # print("accX = " + "".join(str(a) for a in accX))
-    # print("accY = " + "".join(str(b) for b in accY))
-    # print("accZ = " + "".join(str(c) for c in accZ))
-
 print(accX.__len__()/len(file_list)/30)
-plot.title(movement)
+plot.title(movement_list[movement_id])
 plot.plot(accX)
 plot.plot(accY)
 plot.plot(accZ)
