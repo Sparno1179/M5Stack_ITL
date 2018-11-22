@@ -54,6 +54,7 @@ void setup() {
 
   MyMenu.addMenuItem(2, "BRIGHTNESS", "<", "OK", ">", -1, appSetBrightness);
   MyMenu.addMenuItem(2, "SLEEP", "<", "OK", ">", -1, appSleep);
+  MyMenu.addMenuItem(2, "PIC", "<", "OK", ">", -1, appShowPic);
   MyMenu.addMenuItem(2, "RETURN","<","OK",">", 0, dummy);
 
   MyMenu.show();
