@@ -37,9 +37,9 @@ print("show gyro?\n"
 gyroflag = int(input("gyro? -> "))
 
 if file_type_ID == 0:
-    file_type = "*_*_*"
-elif file_type_ID == 1:
     file_type = "*[0-9]"
+elif file_type_ID == 1:
+    file_type = "*_*_*"
 else:
     file_type = "*"
 
@@ -54,7 +54,7 @@ for file in file_list:
     gyroX.extend(csvFile.gyroX.values.tolist())
     gyroY.extend(csvFile.gyroY.values.tolist())
     gyroZ.extend(csvFile.gyroZ.values.tolist())
-    print("extended {}.csv".format(file_list.index(file)))
+    print("extended {}".format(file))
 
 print(accX.__len__()/len(file_list)/30)
 

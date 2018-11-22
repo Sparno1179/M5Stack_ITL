@@ -223,6 +223,7 @@ void appAccTimer() {
       MyMenu.drawAppMenu(F("save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
       MyMenu.nextList();
       // ファイル名用ランダム文字列の生成
+      fileIndex = 0;
       rand_text(randStr);
     }
 
