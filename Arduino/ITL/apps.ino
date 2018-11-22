@@ -31,7 +31,7 @@ void _readSensor(MPU9250* IMU);
 
 /**
  * @brief SD/accフォルダ内のファイルの数を数えて表示
- * 
+ *
  */
 void appCsvFileCount(){
   MyMenu.drawAppMenu(F("CSV File Count"),F(""),F("ESC"),F(""));
@@ -55,10 +55,10 @@ void appCsvFileCount(){
 
 /**
  * @brief 加速度・ジャイロをリアルタイムで計測・表示
- * 
+ *
  * スタート、ストップ機能付き。ループ間隔は15.625ms(64Hz)
  * 結果表示ごとに画面をクリアしているため、画面がちらつきます。
- * 
+ *
  * @attention 加速度の初期値をそろえるため、既定の初期値になるまで初期化を続けます。
  */
 void appDrawAccGyro() {
@@ -84,13 +84,12 @@ void appDrawAccGyro() {
     }
   }
 
-  
   MyMenu.drawAppMenu(F("Current Acc and Gyro"),F("START"),F("EXIT"),F(""));
   MyMenu.windowClr();
   M5.Lcd.drawCentreString("Press START to start measure", LCDcenterX, LCDcenterY2, 2);
-    
+
     while(!M5.BtnB.wasPressed()){
-    
+
       if(M5.BtnA.wasPressed()) {
         MyMenu.drawAppMenu(F("Current Acc and Gyro"),F(""),F("EXIT"),F("STOP"));
 
@@ -127,7 +126,7 @@ void appDrawAccGyro() {
 
 /**
  * @brief 現在時刻を表示する。
- * 
+ *
  */
 void appShowNowTime() {
   MyMenu.drawAppMenu(F("Now Time"),F("REFRESH"),F("EXIT"),F(""));
@@ -137,7 +136,7 @@ void appShowNowTime() {
   }
 
   M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY2, 2);
-  
+
   while(!M5.BtnB.wasPressed()){
     if(M5.BtnA.wasPressed()) {
       M5.Lcd.drawCentreString(nowTime(), LCDcenterX, LCDcenterY2, 2);
@@ -166,18 +165,18 @@ volatile bool buffSaveFlg = false;
 
 /**
  * @brief 加速度をタイマー割り込みでとるパターン
- * 
+ *
  * タイマーがミリ秒単位しかないため64Hzに最も近い16ミリ秒間隔（62.5Hz）を指定
  * 60秒計測ー＞新しいファイルで保存ー＞60秒計測.......
  */
 void appAccTimer() {
   MyMenu.drawAppMenu(F("Save Acc by Timer"),F(""),F("EXIT"),F(""));
-  
+
   while(M5.BtnB.wasPressed()){
     M5.update();
   }
-  
-  // 加速度・ジャイロセンサの宣言・初期化
+
+    // 加速度・ジャイロセンサの宣言・初期化
   M5.Lcd.drawCentreString("Loading...", LCDcenterX, LCDcenterY2, 2);
   delay(1000);
   MPU9250 IMU;
@@ -193,10 +192,10 @@ void appAccTimer() {
     }
     delay(50);
   }
-  
+
   // ファイル名用ランダム文字列の生成
   rand_text(randStr);
-  
+
   MyMenu.drawAppMenu(F("Save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
   MyMenu.windowClr();
 
@@ -218,13 +217,15 @@ void appAccTimer() {
 
   // メインループ
   while(!M5.BtnB.wasPressed()){
-    
-    // Cボタンでリスト送り
+
+    // Cボタンでリスト送り。ついでにファイル名用乱数生成
     if(M5.BtnC.wasPressed()) {
       MyMenu.drawAppMenu(F("save acc and gyro"),F("OK"),F("EXIT"),F("NEXT"));
       MyMenu.nextList();
+      // ファイル名用ランダム文字列の生成
+      rand_text(randStr);
     }
-    
+
     // Aボタンを押すと計測スタート
     if(M5.BtnA.wasPressed()) {
 
@@ -249,7 +250,7 @@ void appAccTimer() {
       // 1秒ごとに経過時間を表示
       tickerShowTime.attach_ms(1000, _showElapsedTime);
       // 30秒ごとにフラグ（buffSaveFlg）を立てる
-      tickerWriteData.attach_ms(measure_time, _buffSave); 
+      tickerWriteData.attach_ms(measure_time, _buffSave);
 
       while(!M5.BtnC.wasPressed()) {
         M5.update();
@@ -273,8 +274,8 @@ void appAccTimer() {
           Serial.print("fileName = "); Serial.println(fileName);
           File file = SD.open(fileName, FILE_WRITE);
           Serial.print("Opened file = "); Serial.println(file);
-          
-          
+
+
           //Serial.println(fileName);
           //ファイルが開けないとき
           if(!file) {
@@ -296,28 +297,28 @@ void appAccTimer() {
             sprintf(buf, "%d, %d, %d, %d, %d, %d", sdBuff[i].accX, sdBuff[i].accY,sdBuff[i].accZ, sdBuff[i].gyroX, sdBuff[i].gyroY, sdBuff[i].gyroZ);
             file.println(buf);
           }
-          
+
           file.close();
           Serial.println("File closed!");
 
           clearLCDY1();
           M5.Lcd.drawCentreString("Write Complete!", LCDcenterX, LCDcenterY3, 2);
-          
+
           //バッファ初期化
           buffPointer = 0;
           buffSaveFlg = false;
-          
+
           // 計測開始
           MyMenu.windowClr();
           tickerSensor.attach_ms<MPU9250*>(16,_readSensor, &IMU);
           tickerShowTime.attach_ms(1000, _showElapsedTime);
-          tickerWriteData.attach_ms(measure_time, _buffSave); 
+          tickerWriteData.attach_ms(measure_time, _buffSave);
           M5.Lcd.drawCentreString("Measurement Start!", LCDcenterX, LCDcenterY1, 2);
           Serial.println("All ticker attached!");
         }
         delay(100);
       }
-      
+
       //タイマーを止める
       tickerSensor.detach();
       tickerShowTime.detach();
@@ -342,7 +343,7 @@ void appAccTimer() {
 
 /**
  * @brief 指定されたフォルダのファイル数をカウントする。
- * 
+ *
  * @param[in] fs 検索対象ファイルシステム。たいていはSD
  * @param[in] dirname フォルダパス名
  * @param[in] levels 探査階層。0の場合は子フォルダを無視する
@@ -385,7 +386,7 @@ int fileCount(fs::FS &fs, const char * dirname, uint8_t levels) {
  * 引数に書き込み先と内容を与え、それをファイルに出力。
  * 呼び出すごとに「オープン→書き込み→クローズ」をするので
  * 速度的に難あり。
- * 
+ *
  * @param[in] fs 書き出し先ファイルシステム。たいていはSD
  * @param[in] path 出力先ファイルパス。なければ自動で作成される。
  * @retval 0 書き出し正常終了
@@ -393,7 +394,6 @@ int fileCount(fs::FS &fs, const char * dirname, uint8_t levels) {
  * @retval 2 ファイル書き込みエラー
  */
 int writeFile(fs::FS &fs, const char * path, const char * message){
-  
     File file = fs.open(path, FILE_APPEND);
     if(!file){
       file.close();
@@ -405,7 +405,7 @@ int writeFile(fs::FS &fs, const char * path, const char * message){
     } else {
       file.close();
       return 2;
-    }    
+    }
 }
 
 
@@ -481,12 +481,12 @@ void appSandBox(){
   char stringC[128] = "";
 
   MPU9250 sensor;
-  
+
 
   M5.Lcd.drawCentreString("Press A to draw macAddr", LCDcenterX, LCDcenterY1, 2);
   M5.Lcd.drawCentreString("Press B to EXIT", LCDcenterX, LCDcenterY2, 2);
   M5.Lcd.drawCentreString("Press C to show randStr", LCDcenterX, LCDcenterY3, 2);
-  
+
   while(M5.BtnB.wasPressed()){
     M5.update();
   }
@@ -525,12 +525,12 @@ void appSandBox(){
 void appSetBrightness(){
   byte tmp_brigth = byte(EEPROM.read(0));
   byte tmp_lbrigth = 0;
-  
+
   MyMenu.drawAppMenu(F("DISPLAY BRIGHTNESS"),F("-"),F("OK"),F("+"));
-  
+
   while(M5.BtnB.wasPressed()){
     M5.update();
-  }  
+  }
 
   while(!M5.BtnB.wasPressed()){
     if(M5.BtnA.wasPressed() and tmp_brigth >= 16){
@@ -549,7 +549,7 @@ void appSetBrightness(){
     }
     M5.update();
   }
-  MyMenu.show();      
+  MyMenu.show();
 }
 
 
@@ -597,7 +597,7 @@ String getMacAddr() {
 /**
  * @fn nowTime
  * @brief 現在時刻を取得し、返す
- * 
+ *
  * @return    "YYYY-MM-DD_HH-MM-SS"の形の時刻情報
  * @attention 時刻情報を返すのはいいが、M5Stackは起動時に時刻が1970/1/1でスタートするので
  *            ほとんどこのメソッドの意味はないかもしれない。
@@ -607,7 +607,7 @@ String nowTime() {
   struct tm tm;
   time_t t = time(NULL);
   localtime_r(&t, &tm);
-  
+
   return String(tm.tm_year + 1900)+"-"+
          String(tm.tm_mon + 1)+"-"+
          String(tm.tm_mday)+"_"+
@@ -626,7 +626,7 @@ String nowTime() {
 //  while(M5.BtnB.wasPressed()){
 //    M5.update();
 //  }
-//    
+//
 //  while(!M5.BtnB.wasPressed()){
 //    M5.update();
 //  }

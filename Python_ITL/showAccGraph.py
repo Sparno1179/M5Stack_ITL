@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plot
 import numpy as np
 import glob
+import accelerationfunc as accfun
 
 accX = []
 accY = []
@@ -30,6 +31,11 @@ print("file type?\n"
 
 file_type_ID = int(input("file type -> "))
 
+print("show gyro?\n"
+      "0: no\n"
+      "1: yes")
+gyroflag = int(input("gyro? -> "))
+
 if file_type_ID == 0:
     file_type = "*_*_*"
 elif file_type_ID == 1:
@@ -51,12 +57,14 @@ for file in file_list:
     print("extended {}.csv".format(file_list.index(file)))
 
 print(accX.__len__()/len(file_list)/30)
+
 plot.title(movement_list[movement_id])
 plot.plot(accX)
 plot.plot(accY)
 plot.plot(accZ)
-plot.plot(gyroX)
-plot.plot(gyroY)
-plot.plot(gyroZ)
+if gyroflag:
+    plot.plot(gyroX)
+    plot.plot(gyroY)
+    plot.plot(gyroZ)
 plot.show()
 
