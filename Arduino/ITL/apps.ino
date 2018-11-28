@@ -263,13 +263,13 @@ void appAccTimer() {
           tickerWriteData.detach();
           Serial.println("All ticker detached!");
 
-          // ファイル名のフォーマットは "MACアドレス_乱数_通し番号.csv"
+          // ファイル名のフォーマットは "MACアドレス_乱数_通し番号(3桁0埋め).csv"
           char fileName[50] = {};
           // movementIDより、保存先パスの設定
           sprintf(fileName, "/acc/%s", movementList[movementID]);
           //ファイル作成
           Serial.println("making csv file...");
-          sprintf(fileName, "/acc/%s/%s_%s_%d.csv", movementList[movementID], getMacAddr().c_str(), randStr, fileIndex);
+          sprintf(fileName, "/acc/%s/%s_%s_%03d.csv", movementList[movementID], getMacAddr().c_str(), randStr, fileIndex);
           Serial.println("filename created completely.");
           fileIndex++;
           Serial.print("fileName = "); Serial.println(fileName);
