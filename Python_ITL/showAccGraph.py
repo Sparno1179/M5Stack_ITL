@@ -1,9 +1,10 @@
 import pandas as pd
-import os
 import matplotlib.pyplot as plot
-import numpy as np
 import glob
-import accelerationfunc as accfun
+import accelerationfunc as accfunc
+import re
+import pprint
+
 
 accX = []
 accY = []
@@ -12,7 +13,7 @@ gyroX = []
 gyroY = []
 gyroZ = []
 
-movement_list = ("walk", "stand", "sit", "stdown", "stup", "lying", "vehicle")
+movement_list = ("walk", "stand", "sit", "stdown", "stup", "lying", "vehicle", "vehicle_cycling", "test")
 
 print("0: walk\n"
       "1: stand\n"
@@ -20,30 +21,25 @@ print("0: walk\n"
       "3: stair_down\n"
       "4: stair_up\n"
       "5: lying\n"
-      "6: vehicle\n")
+      "6: vehicle\n"
+      "7: vehicleCycling\n"
+      "8: test")
 
 movement_id = int(input("movementID -> "))
-
-print("file type?\n"
-      "0: num only (NUM.csv)\n"
-      "1: new format only (MAC_RAND_NUM.csv)\n"
-      "2: both")
-
-file_type_ID = int(input("file type -> "))
+movement_type = movement_list[movement_id]
 
 print("show gyro?\n"
       "0: no\n"
       "1: yes")
-gyroflag = int(input("gyro? -> "))
+gyro_flag = int(input("gyro? -> "))
 
-if file_type_ID == 0:
-    file_type = "*[0-9]"
-elif file_type_ID == 1:
-    file_type = "*_*_*"
-else:
-    file_type = "*"
+print("normalize graph?\n"
+      "0: no\n"
+      "1: yes")
+normalize_flag = int(input("normalize? -> "))
 
-file_list = glob.glob("acc/{}/{}.csv".format(movement_list[movement_id], file_type))
+
+file_list = glob.glob("acc/{}/*.csv".format(movement_type))
 
 for file in file_list:
     csvFile = pd.read_csv(file, names=('accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ'))
@@ -51,18 +47,23 @@ for file in file_list:
     accX.extend(csvFile.accX.values.tolist())
     accY.extend(csvFile.accY.values.tolist())
     accZ.extend(csvFile.accZ.values.tolist())
-    gyroX.extend(csvFile.gyroX.values.tolist())
-    gyroY.extend(csvFile.gyroY.values.tolist())
-    gyroZ.extend(csvFile.gyroZ.values.tolist())
+    if gyro_flag:
+        gyroX.extend(csvFile.gyroX.values.tolist())
+        gyroY.extend(csvFile.gyroY.values.tolist())
+        gyroZ.extend(csvFile.gyroZ.values.tolist())
     print("extended {}".format(file))
 
 print(accX.__len__()/len(file_list)/30)
 
 plot.title(movement_list[movement_id])
+if normalize_flag:
+    accX = accfunc.normalize_acc(accX)
+    accY = accfunc.normalize_acc(accY)
+    accZ = accfunc.normalize_acc(accZ)
 plot.plot(accX)
 plot.plot(accY)
 plot.plot(accZ)
-if gyroflag:
+if gyro_flag:
     plot.plot(gyroX)
     plot.plot(gyroY)
     plot.plot(gyroZ)

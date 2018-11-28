@@ -1,11 +1,11 @@
 # vscodeの設定ファイル
-
 /.vscode
 /Arduino/.vscode
 /Arduino/ITL/.vscode
 
 # PyCharmの設定ファイル
 /Python_ITL/.idea
+/Python_ITL/__pycache__
 
 # 加速度データ
 /Python_ITL/acc

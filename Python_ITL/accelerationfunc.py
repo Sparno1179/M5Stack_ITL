@@ -4,13 +4,7 @@ import matplotlib.pyplot as plt
 
 def normalize_acc(acc_list):
     array = np.array(acc_list)
-    max = np.max(array)
-    min = np.min(array)
-
-    acc_amp = max - min
-    print(max)
-    print(min)
-    return array / acc_amp
+    return array / 2000
 
 
 if __name__ == '__main__':
