@@ -617,6 +617,20 @@ String nowTime() {
          String(tm.tm_sec);
 }
 
+void appShowPic(){
+  MyMenu.drawAppMenu(F("SEVASTIAN"),F(""),F("BACK"),F(""));
+
+  while(M5.BtnB.wasPressed()){
+    M5.update();
+}
+
+  while(!M5.BtnB.wasPressed()){
+    M5.Lcd.drawJpgFile(SD, "/jpg/sev.jpg", 50, 35);
+    M5.update();
+}
+
+MyMenu.show();
+}
 
 
 // --------------------- ここより下はもともと用意されていたメソッドたち ---------------------
