@@ -56,6 +56,7 @@ for i in range(0, len(accX), 3762):
     plt.show()
 
 print("切りたい範囲をインデックス(x座標)で指定")
+print("加速度サイズ: {}".format(len(accX)))
 
 while True:
     print("キャンセルするには-1を入力")
@@ -65,6 +66,12 @@ while True:
         break
 
     end = int(input("end ->"))
+
+    if start > end:
+        print("\nError: 開始座標より終了座標のほうが小さいです。再入力してください\n")
+        continue
+    if start > len(accX) or end > len(accX):
+        print("\nError: 入力座標が加速度のサイズを超えています。再入力してください。\n")
 
     for i in range(end - start):
         accX[start + i] = -5000
@@ -117,11 +124,19 @@ plt.plot(gyroY)
 plt.plot(gyroZ)
 plt.show()
 
-# csvファイルに書き出し
-acc_gyro_df.to_csv("acc/new_acc/{}/{}{}.csv".format(movement_type, movement_type, random.randint(1, 90000)))
-print("csv書き出し完了")
+print("\n\n本当に変更を適用しますか？")
+save_flag = input("適用するなら\"yes\"と入力 -> ")
 
-# 使用済みcsvファイルを移動
-for file in csv_list:
-    shutil.move(file, "acc/trimmed_acc/{}".format(movement_type))
-print("csv移動完了")
+if save_flag == "yes":
+
+    # csvファイルに書き出し
+    acc_gyro_df.to_csv("acc/new_acc/{}/{}{}.csv".format(movement_type, movement_type, random.randint(1, 90000)))
+    print("csv書き出し完了")
+
+    # 使用済みcsvファイルを移動
+    for file in csv_list:
+        shutil.move(file, "acc/trimmed_acc/{}".format(movement_type))
+    print("csv移動完了")
+
+else:
+    print("\n\nキャンセルされました。変更はすべて破棄されました")
